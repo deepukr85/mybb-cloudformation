@@ -11,8 +11,7 @@
 define("IN_MYBB", 1);
 define('THIS_SCRIPT', 'stats.php');
 
-$templatelist = "stats,stats_thread,stats_topforum";
-
+$templatelist = "stats,stats_thread";
 require_once "./global.php";
 require_once MYBB_ROOT."inc/functions_post.php";
 require_once MYBB_ROOT."inc/class_parser.php";
@@ -73,17 +72,6 @@ if($inactiveforums)
 
 $unviewableforumsarray = array_merge($unviewablefids, $inactivefids);
 
-// Check group permissions if we can't view threads not started by us
-$group_permissions = forum_permissions();
-$onlyusfids = array();
-foreach($group_permissions as $gpfid => $forum_permissions)
-{
-	if(isset($forum_permissions['canonlyviewownthreads']) && $forum_permissions['canonlyviewownthreads'] == 1)
-	{
-		$onlyusfids[] = $gpfid;
-	}
-}
-
 // Most replied-to threads
 $most_replied = $cache->read("most_replied_threads");
 
@@ -98,10 +86,7 @@ if(!empty($most_replied))
 {
 	foreach($most_replied as $key => $thread)
 	{
-		if(
-			!in_array($thread['fid'], $unviewableforumsarray) &&
-			(!in_array($thread['fid'], $onlyusfids) || ($mybb->user['uid'] && $thread['uid'] == $mybb->user['uid']))
-		)
+		if(!in_array($thread['fid'], $unviewableforumsarray))
 		{
 			$thread['subject'] = htmlspecialchars_uni($parser->parse_badwords($thread['subject']));
 			$numberbit = my_number_format($thread['replies']);
@@ -126,10 +111,7 @@ if(!empty($most_viewed))
 {
 	foreach($most_viewed as $key => $thread)
 	{
-		if(
-			!in_array($thread['fid'], $unviewableforumsarray) &&
-			(!in_array($thread['fid'], $onlyusfids) || ($mybb->user['uid'] && $thread['uid'] == $mybb->user['uid']))
-		)
+		if(!in_array($thread['fid'], $unviewableforumsarray))
 		{
 			$thread['subject'] = htmlspecialchars_uni($parser->parse_badwords($thread['subject']));
 			$numberbit = my_number_format($thread['views']);
@@ -169,8 +151,7 @@ if(empty($forum['fid']))
 else
 {
 	$forum['name'] = htmlspecialchars_uni(strip_tags($forum['name']));
-	$forum['link'] = get_forum_link($forum['fid']);
-	eval("\$topforum = \"".$templates->get("stats_topforum")."\";");
+	$topforum = '<a href="'.get_forum_link($forum['fid'])."\">{$forum['name']}</a>";
 	$topforumposts = $forum['posts'];
 	$topforumthreads = $forum['threads'];
 }
@@ -182,7 +163,7 @@ if($mybb->settings['statstopreferrer'] == 1 && isset($statistics['top_referrer']
 	// Only show this if we have anything more the 0 referrals
 	if($statistics['top_referrer']['referrals'] > 0)
 	{
-		$toprefuser = build_profile_link(htmlspecialchars_uni($statistics['top_referrer']['username']), $statistics['top_referrer']['uid']);
+		$toprefuser = build_profile_link($statistics['top_referrer']['username'], $statistics['top_referrer']['uid']);
 		$top_referrer = $lang->sprintf($lang->top_referrer, $toprefuser, my_number_format($statistics['top_referrer']['referrals']));
 	}
 }
@@ -201,7 +182,7 @@ else
 	}
 	else
 	{
-		$topposter = build_profile_link(htmlspecialchars_uni($statistics['top_poster']['username']), $statistics['top_poster']['uid']);
+		$topposter = build_profile_link($statistics['top_poster']['username'], $statistics['top_poster']['uid']);
 	}
 
 	$topposterposts = $statistics['top_poster']['poststoday'];

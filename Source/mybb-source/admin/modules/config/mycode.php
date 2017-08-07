@@ -99,13 +99,6 @@ if($mybb->input['action'] == "add")
 			$errors[] = $lang->error_missing_regex;
 		}
 
-		$regex = str_replace("\x0", "", $mybb->input['regex']);
-
-		if(check_existing_regex($regex))
-		{
-			$errors[] = $lang->error_regex_already_available;
-		}
-
 		if(!trim($mybb->input['replacement']))
 		{
 			$errors[] = $lang->error_missing_replacement;
@@ -122,7 +115,7 @@ if($mybb->input['action'] == "add")
 			$new_mycode = array(
 				'title'	=> $db->escape_string($mybb->input['title']),
 				'description' => $db->escape_string($mybb->input['description']),
-				'regex' => $db->escape_string($regex),
+				'regex' => $db->escape_string(str_replace("\x0", "", $mybb->input['regex'])),
 				'replacement' => $db->escape_string($mybb->input['replacement']),
 				'active' => $mybb->get_input('active', MyBB::INPUT_INT),
 				'parseorder' => $mybb->get_input('parseorder', MyBB::INPUT_INT)
@@ -233,13 +226,6 @@ if($mybb->input['action'] == "edit")
 			$errors[] = $lang->error_missing_regex;
 		}
 
-		$regex = str_replace("\x0", "", $mybb->input['regex']);
-
-		if(check_existing_regex($regex, $mycode))
-		{
-			$errors[] = $lang->error_regex_already_available;
-		}
-
 		if(!trim($mybb->input['replacement']))
 		{
 			$errors[] = $lang->error_missing_replacement;
@@ -256,7 +242,7 @@ if($mybb->input['action'] == "edit")
 			$updated_mycode = array(
 				'title'	=> $db->escape_string($mybb->input['title']),
 				'description' => $db->escape_string($mybb->input['description']),
-				'regex' => $db->escape_string($regex),
+				'regex' => $db->escape_string(str_replace("\x0", "", $mybb->input['regex'])),
 				'replacement' => $db->escape_string($mybb->input['replacement']),
 				'active' => $mybb->get_input('active', MyBB::INPUT_INT),
 				'parseorder' => $mybb->get_input('parseorder', MyBB::INPUT_INT)
@@ -455,34 +441,4 @@ function test_regex($regex, $replacement, $test)
 	$array['actual'] = @preg_replace("#".str_replace("\x0", "", $regex)."#si", $replacement, $test);
 	$array['html'] = htmlspecialchars_uni($array['actual']);
 	return $array;
-}
-
-/**
- * Checks if a regex is already available
- *
- * @param string $regex The regex to check
- * @param array $current The currently edited MyCode
- *
- * @return bool True if already available, false otherwise
- */
-function check_existing_regex($regex='', $current=array())
-{
-	global $cache;
-
-	if(!empty($current) && $current['regex'] == $regex)
-	{
-		return false;
-	}
-
-	$mycodes = $cache->read('mycode');
-
-	foreach($mycodes as $mycode)
-	{
-		if($mycode['regex'] == $regex)
-		{
-			return true;
-		}
-	}
-
-	return false;
 }

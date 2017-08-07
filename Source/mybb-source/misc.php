@@ -12,11 +12,9 @@ define("IN_MYBB", 1);
 define("IGNORE_CLEAN_VARS", "sid");
 define('THIS_SCRIPT', 'misc.php');
 
-$templatelist = "misc_rules_forum,misc_help_helpdoc,misc_whoposted_poster,misc_whoposted,misc_smilies_popup_smilie,misc_smilies_popup,misc_smilies_popup_empty,misc_smilies_popup_row,multipage_start";
-$templatelist .= ",misc_buddypopup,misc_buddypopup_user,misc_buddypopup_user_none,misc_buddypopup_user_online,misc_buddypopup_user_offline,misc_buddypopup_user_sendpm,misc_syndication_forumlist";
-$templatelist .= ",misc_smilies,misc_smilies_smilie,misc_help_section_bit,misc_help_section,misc_help,forumdisplay_password_wrongpass,forumdisplay_password,misc_helpresults,misc_helpresults_bit";
-$templatelist .= ",multipage,multipage_end,multipage_jump_page,multipage_nextpage,multipage_page,multipage_page_current,multipage_page_link_current,multipage_prevpage,misc_imcenter_error";
-$templatelist .= ",misc_smilies_popup_no_smilies,misc_smilies_no_smilies,misc_syndication,misc_help_search,misc_helpresults_noresults,misc_syndication_forumlist_forum,misc_syndication_feedurl";
+$templatelist = "misc_rules_forum,misc_help_helpdoc,misc_whoposted_poster,misc_whoposted,misc_smilies_popup_smilie,misc_smilies_popup,misc_smilies_popup_empty,misc_syndication_feedurl,misc_syndication";
+$templatelist .= ",misc_buddypopup,misc_buddypopup_user,misc_buddypopup_user_none,misc_buddypopup_user_online,misc_buddypopup_user_offline,misc_buddypopup_user_sendpm,misc_help_search,misc_syndication_forumlist";
+$templatelist .= ",misc_smilies,misc_smilies_smilie,misc_help_section_bit,misc_help_section,misc_help,forumdisplay_password_wrongpass,forumdisplay_password,misc_helpresults,misc_helpresults_bit,misc_helpresults_noresults,multipage,multipage_end,multipage_jump_page,multipage_nextpage,multipage_page,multipage_page_current,multipage_page_link_current,multipage_prevpage,multipage_start";
 
 require_once "./global.php";
 require_once MYBB_ROOT."inc/functions_post.php";
@@ -333,7 +331,7 @@ elseif($mybb->input['action'] == "helpresults")
 			'allow_imgcode' => 0,
 			'filter_badwords' => 1
 		);
-		$helpdoc['helpdoc'] = my_strip_tags($parser->parse_message($helpdoc['document'], $parser_options));
+		$helpdoc['helpdoc'] = strip_tags($parser->parse_message($helpdoc['document'], $parser_options));
 
 		if(my_strlen($helpdoc['helpdoc']) > 350)
 		{
@@ -552,7 +550,6 @@ elseif($mybb->input['action'] == "buddypopup")
 
 		while($buddy = $db->fetch_array($query))
 		{
-			$buddy['username'] = htmlspecialchars_uni($buddy['username']);
 			$buddy_name = format_name($buddy['username'], $buddy['usergroup'], $buddy['displaygroup']);
 			$profile_link = build_profile_link($buddy_name, $buddy['uid'], '_blank', 'if(window.opener) { window.opener.location = this.href; return false; }');
 
@@ -628,32 +625,22 @@ elseif($mybb->input['action'] == "whoposted")
 		error($lang->error_invalidthread);
 	}
 
-	// Make sure we are looking at a real thread here.
-	if(($thread['visible'] == -1 && !is_moderator($thread['fid'], "canviewdeleted")) || ($thread['visible'] == 0 && !is_moderator($thread['fid'], "canviewunapprove")) || $thread['visible'] > 1)
+	if(is_moderator($thread['fid'], "canviewunapprove"))
 	{
-		error($lang->error_invalidthread);
-	}
-
-	if(is_moderator($thread['fid'], "canviewdeleted") || is_moderator($thread['fid'], "canviewunapprove"))
-	{
-		if(is_moderator($thread['fid'], "canviewunapprove") && !is_moderator($thread['fid'], "canviewdeleted"))
-		{
-			$show_posts = "p.visible IN (0,1)";
-		}
-		elseif(is_moderator($thread['fid'], "canviewdeleted") && !is_moderator($thread['fid'], "canviewunapprove"))
-		{
-			$show_posts = "p.visible IN (-1,1)";
-		}
-		else
-		{
-			$show_posts = "p.visible IN (-1,0,1)";
-		}
+		$ismod = true;
+		$show_posts = "(p.visible = '1' OR p.visible = '0')";
 	}
 	else
 	{
-		$show_posts = "p.visible = 1";
+		$ismod = false;
+		$show_posts = "p.visible = '1'";
 	}
 
+	// Make sure we are looking at a real thread here.
+	if(($thread['visible'] != 1 && $ismod == false) || ($thread['visible'] > 1 && $ismod == true))
+	{
+		error($lang->error_invalidthread);
+	}
 	// Does the thread belong to a valid forum?
 	$forum = get_forum($thread['fid']);
 	if(!$forum || $forum['type'] != "f")
@@ -695,8 +682,6 @@ elseif($mybb->input['action'] == "whoposted")
 		{
 			$poster['username'] = $poster['postusername'];
 		}
-		$poster['username'] = htmlspecialchars_uni($poster['username']);
-		$poster['postusername'] = htmlspecialchars_uni($poster['postusername']);
 		$poster_name = format_name($poster['username'], $poster['usergroup'], $poster['displaygroup']);
 		if($poster['uid'])
 		{
@@ -720,10 +705,9 @@ elseif($mybb->input['action'] == "smilies")
 	{ // make small popup list of smilies
 		$editor = preg_replace('#([^a-zA-Z0-9_-]+)#', '', $mybb->get_input('editor'));
 		$e = 1;
-		$smile_icons = '';
-		$class = alt_trow(1);
+		$class = "trow1";
+		$smilies = "<tr>";
 		$smilies_cache = $cache->read("smilies");
-
 		if(is_array($smilies_cache))
 		{
 			$extra_class = ' smilie_pointer';
@@ -742,11 +726,10 @@ elseif($mybb->input['action'] == "smilies")
 
 				$onclick = " onclick=\"MyBBEditor.insertText(' $smilie_insert ');\"";
 				eval('$smilie_image = "'.$templates->get('smilie', 1, 0).'";');
-				eval("\$smile_icons .= \"".$templates->get("misc_smilies_popup_smilie")."\";");
+				eval("\$smilies .= \"".$templates->get("misc_smilies_popup_smilie")."\";");
 				if($e == 2)
 				{
-					eval("\$smilies .= \"".$templates->get("misc_smilies_popup_row")."\";");
-					$smile_icons = '';
+					$smilies .= "</tr><tr>";
 					$e = 1;
 					$class = alt_trow();
 				}
@@ -756,17 +739,10 @@ elseif($mybb->input['action'] == "smilies")
 				}
 			}
 		}
-
 		if($e == 2)
 		{
 			eval("\$smilies .= \"".$templates->get("misc_smilies_popup_empty")."\";");
 		}
-
-		if(!$smilies)
-		{
-			eval("\$smilies = \"".$templates->get("misc_smilies_popup_no_smilies")."\";");
-		}
-
 		eval("\$smiliespage = \"".$templates->get("misc_smilies_popup", 1, 0)."\";");
 		output_page($smiliespage);
 	}
@@ -775,7 +751,6 @@ elseif($mybb->input['action'] == "smilies")
 		add_breadcrumb($lang->nav_smilies);
 		$class = "trow1";
 		$smilies_cache = $cache->read("smilies");
-
 		if(is_array($smilies_cache))
 		{
 			$extra_class = $onclick = '';
@@ -791,12 +766,6 @@ elseif($mybb->input['action'] == "smilies")
 				$class = alt_trow();
 			}
 		}
-
-		if(!$smilies)
-		{
-			eval("\$smilies = \"".$templates->get("misc_smilies_no_smilies")."\";");
-		}
-
 		eval("\$smiliespage = \"".$templates->get("misc_smilies")."\";");
 		output_page($smiliespage);
 	}
@@ -806,57 +775,44 @@ elseif($mybb->input['action'] == "imcenter")
 	$mybb->input['imtype'] = $mybb->get_input('imtype');
 	if($mybb->input['imtype'] != "aim" && $mybb->input['imtype'] != "skype" && $mybb->input['imtype'] != "yahoo")
 	{
-		$message = $lang->error_invalidimtype;
-		eval("\$error = \"".$templates->get("misc_imcenter_error", 1, 0)."\";");
-		echo $error;
-		exit;
+		error($lang->error_invalidimtype);
 	}
-
 	$uid = $mybb->get_input('uid', MyBB::INPUT_INT);
 	$user = get_user($uid);
 
 	if(!$user)
 	{
-		$message = $lang->error_invaliduser;
-		eval("\$error = \"".$templates->get("misc_imcenter_error", 1, 0)."\";");
-		echo $error;
-		exit;
+		error($lang->error_invaliduser);
 	}
 
 	if(empty($user[$mybb->input['imtype']]))
 	{
-		$message = $lang->error_invalidimtype;
-		eval("\$error = \"".$templates->get("misc_imcenter_error", 1, 0)."\";");
-		echo $error;
-		exit;
+		error($lang->error_invalidimtype);
 	}
 
 	$settingkey = 'allow'.$mybb->input['imtype'].'field';
 	if(!is_member($mybb->settings[$settingkey], $user))
 	{
-		$message = $lang->error_nopermission_user_ajax;
-		eval("\$error = \"".$templates->get("misc_imcenter_error", 1, 0)."\";");
-		echo $error;
-		exit;
+		error_no_permission();
 	}
 
 	// Build IM navigation bar
 	$navigationbar = $navsep = $imtype = $imtype_lang = '';
-	if(!empty($user['aim']) && is_member($mybb->settings['allowaimfield'], array('usergroup' => $user['usergroup'], 'additionalgroups' => $user['additionalgroups'])))
+	if($user['aim'])
 	{
 		$imtype = "aim";
 		$imtype_lang = $lang->aol_im;
 		eval("\$navigationbar .= \"".$templates->get("misc_imcenter_nav")."\";");
 		$navsep = ' - ';
 	}
-	if(!empty($user['skype']) && is_member($mybb->settings['allowskypefield'], array('usergroup' => $user['usergroup'], 'additionalgroups' => $user['additionalgroups'])))
+	if($user['skype'])
 	{
 		$imtype = "skype";
 		$imtype_lang = $lang->skype;
 		eval("\$navigationbar .= \"".$templates->get("misc_imcenter_nav")."\";");
 		$navsep = ' - ';
 	}
-	if(!empty($user['yahoo']) && is_member($mybb->settings['allowyahoofield'], array('usergroup' => $user['usergroup'], 'additionalgroups' => $user['additionalgroups'])))
+	if($user['yahoo'])
 	{
 		$imtype = "yahoo";
 		$imtype_lang = $lang->yahoo_im;
@@ -867,10 +823,10 @@ elseif($mybb->input['action'] == "imcenter")
 	$user['yahoo'] = htmlspecialchars_uni($user['yahoo']);
 	$user['aim'] = htmlspecialchars_uni($user['aim']);
 
-	$user['username'] = htmlspecialchars_uni($user['username']);
-
 	$lang->chat_on_skype = $lang->sprintf($lang->chat_on_skype, $user['username']);
 	$lang->call_on_skype = $lang->sprintf($lang->call_on_skype, $user['username']);
+	$lang->send_y_message = $lang->sprintf($lang->send_y_message, $user['username']);
+	$lang->view_y_profile = $lang->sprintf($lang->view_y_profile, $user['username']);
 
 	$imtemplate = "misc_imcenter_".$mybb->input['imtype'];
 	eval("\$imcenter = \"".$templates->get($imtemplate, 1, 0)."\";");
@@ -883,13 +839,9 @@ elseif($mybb->input['action'] == "syndication")
 
 	$fid = $mybb->get_input('fid', MyBB::INPUT_INT);
 	$version = $mybb->get_input('version');
-	$new_limit = $mybb->get_input('limit', MyBB::INPUT_INT);
+	$limit = $mybb->get_input('limit', MyBB::INPUT_INT);
 	$forums = $mybb->get_input('forums', MyBB::INPUT_ARRAY);
 	$limit = 15;
-	if(!empty($new_limit) && $new_limit != $limit)
-	{
-		$limit = $new_limit;
-	}
 	$feedurl = '';
 	$add = false;
 
@@ -917,7 +869,7 @@ elseif($mybb->input['action'] == "syndication")
 				$all = true;
 				break;
 			}
-			elseif(ctype_digit($fid))
+			elseif(is_numeric($fid))
 			{
 				if(!isset($unview[$fid]))
 				{
@@ -950,9 +902,9 @@ elseif($mybb->input['action'] == "syndication")
 		}
 		if((int)$limit > 0)
 		{
-			if($limit > 50)
+			if($limit > 100)
 			{
-				$limit = 50;
+				$limit = 100;
 			}
 			if(!$add)
 			{
@@ -1054,7 +1006,7 @@ function makesyndicateforums($pid=0, $selitem="", $addselect=true, $depth="")
 
 					if($forum['password'] == '' && !in_array($forum['fid'], $unexp) || $forum['password'] && isset($mybb->cookies['forumpass'][$forum['fid']]) && $mybb->cookies['forumpass'][$forum['fid']] === md5($mybb->user['uid'].$forum['password']))
 					{
-						eval("\$forumlistbits .= \"".$templates->get("misc_syndication_forumlist_forum")."\";");
+						$forumlistbits .= "<option value=\"{$forum['fid']}\" $optionselected>$depth {$forum['name']}</option>\n";
 					}
 
 					if(!empty($forumcache[$forum['fid']]))
