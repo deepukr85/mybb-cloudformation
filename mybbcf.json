@@ -16,7 +16,7 @@
     "WWWInstanceType": {
       "Type": "String",
       "Description": "The type of EC2 instance to launch for the WWW (web-servers) tier.",
-      "Default": "t2.micro",
+      "Default": "t2.medium",
       "AllowedValues": [ "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge" ],
       "ConstraintDescription": "Must be a valid EC2 instance type!"
     },
@@ -33,7 +33,7 @@
     "DBInstanceClass": {
       "Type": "String",
       "Description": "The class of RDS instance to launch for the DB (database) tier.",
-      "Default": "db.t2.micro",
+      "Default": "db.t2.small",
       "AllowedValues": [ "db.m4.large", "db.m4.xlarge", "db.m4.2xlarge", "db.m4.4xlarge", "db.m4.10xlarge",
         "db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge",
         "db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge",
