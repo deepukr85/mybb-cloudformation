@@ -605,7 +605,7 @@
             },
 
             "sources": {
-              "/tmp/mybb": "https://github.com/vpalos/cloudformation-mybb/tarball/master"
+              "/tmp/mybb": "https://github.com/deepukr85/mybb-cloudformation/tarball/master"
             },
 
             "files": {
