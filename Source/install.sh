@@ -53,7 +53,6 @@ cd "$TARGET"
 # chown www-data:www-data *
 chmod 666 inc/config.php inc/settings.php
 chmod 666 inc/languages/english/*.php inc/languages/english/admin/*.php
-rm -Rf install
 
 # TODO: The "uploads/" path should be mounted on an S3 bucket.
 chmod 777 cache/ cache/themes/ uploads/ uploads/avatars/
